@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulador Bohr: Serie de Balmer</title>
+    <style>
+        body { background: #050505; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .controls { margin-bottom: 25px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+        button { padding: 12px 20px; cursor: pointer; border: none; border-radius: 6px; color: white; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        button:hover { filter: brightness(1.2); transform: translateY(-2px); }
+        .n3 { background: #ff4444; } .n4 { background: #00fbff; color: #000; } .n5 { background: #4444ff; } .n6 { background: #a040ff; }
+        .reset { background: #444; margin-left: 20px; border: 1px solid #666; }
+        .reset:hover { background: #ff4444; }
+        canvas { background: #000; border: 1px solid #333; border-radius: 12px; }
+        #msg { margin: 15px; font-size: 19px; color: #ffff00; font-weight: bold; height: 35px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <h2>Simulador Atómico: Serie de Balmer</h2>
+    
+    <div class="controls">
+        <button class="n3" onclick="iniciar(3, '#ff0000', 656)">n=3 → n=2 (Rojo)</button>
+        <button class="n4" onclick="iniciar(4, '#00fbff', 486)">n=4 → n=2 (Cian)</button>
+        <button class="n5" onclick="iniciar(5, '#3333ff', 434)">n=5 → n=2 (Azul)</button>
+        <button class="n6" onclick="iniciar(6, '#9d00ff', 410)">n=6 → n=2 (Violeta)</button>
+        <button class="reset" onclick="resetSim()">LIMPIAR ESPECTRO</button>
+    </div>
+
+    <div id="msg">Selecciona un salto para excitar el átomo...</div>
+    <canvas id="cvs" width="1100" height="650"></canvas>
+
+    <script>
+        const canvas = document.getElementById('cvs');
+        const ctx = canvas.getContext('2d');
+        const msg = document.getElementById('msg');
+
+        const niveles = { 1: 55, 2: 120, 3: 195, 4: 250, 5: 295, 6: 330 };
+        const dx = 780, dy = 200, dw = 250, dh = 240;
+        
+        let e, f, lineasDetectadas;
+
+        function resetSim() {
+            e = { r: niveles[1], ang: 0, estado: 'quieto', colorVis: '', wl: '', x: 0, y: 0 };
+            f = { x: -200, y: 0, active: false, col: '', freq: 0.2, txt: '', vel: 1.5, origenX: 0 };
+            lineasDetectadas = [];
+            msg.innerText = "Simulación reiniciada. Electrón en estado fundamental (n=1).";
+        }
+
+        function iniciar(nTarget, color, wl) {
+            if (e.estado !== 'quieto') return;
+            e.targetN = nTarget; e.colorVis = color; e.wl = wl;
+            f.active = true; f.x = 0; f.origenX = 0; f.y = e.y;
+            f.col = "#d1d1ff"; f.freq = 0.9; f.txt = "ABSORCIÓN UV (Invisible)"; f.vel = 2.0;
+            e.estado = 'esperando_uv';
+            msg.innerText = "1. Absorción: El fotón UV sube al electrón hasta n=" + nTarget;
+        }
+
+        function animar() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const cx = 350, cy = 325;
+
+            // Núcleo
+            ctx.shadowBlur = 15; ctx.shadowColor = "white";
+            ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Órbitas
+            for (let n in niveles) {
+                ctx.beginPath(); ctx.arc(cx, cy, niveles[n], 0, Math.PI * 2);
+                ctx.strokeStyle = (n == 1) ? "#444" : (n == 2 ? "#666" : "#222");
+                if (e.estado === 'subiendo' && n == e.targetN) ctx.strokeStyle = "gold";
+                if (e.estado === 'emitiendo_visible' && n == 2) ctx.strokeStyle = e.colorVis;
+                ctx.stroke();
+                ctx.fillStyle = "#888"; ctx.font = "bold 13px sans-serif";
+                ctx.fillText("n=" + n, cx + niveles[n] + 10, cy + 5);
+            }
+
+            e.x = cx + Math.cos(e.ang) * e.r;
+            e.y = cy + Math.sin(e.ang) * e.r;
+
+            // Lógica Fotón
+            if (f.active) {
+                f.x += f.vel;
+                if (e.estado === 'esperando_uv') f.y = e.y;
+                drawWave(f.x, f.y, f.col, f.freq, f.txt, f.origenX);
+                
+                if (e.estado === 'esperando_uv' && f.x >= e.x) {
+                    f.active = false; e.estado = 'subiendo';
+                }
+                
+                if (e.estado === 'emitiendo_visible' && f.x >= (dx + dw / 2)) {
+                    if (!lineasDetectadas.find(l => l.wl === e.wl)) {
+                        lineasDetectadas.push({ wl: e.wl, col: e.colorVis });
+                    }
+                }
+                if (f.x > 1100) f.active = false;
+            }
+
+            // Estados Electrón
+            if (e.estado === 'subiendo') {
+                if (e.r < niveles[e.targetN]) e.r += 1.2; 
+                else { 
+                    e.estado = 'cayendo_visible'; 
+                    msg.innerText = "2. Emisión: El electrón cae a n=2 y libera luz de " + e.wl + "nm"; 
+                }
+            }
+            if (e.estado === 'cayendo_visible') {
+                if (e.r > niveles[2]) e.r -= 0.9;
+                else {
+                    e.estado = 'emitiendo_visible';
+                    f.active = true; f.origenX = e.x; f.x = e.x; f.y = e.y;
+                    f.col = e.colorVis; f.freq = 0.35; f.txt = "FOTÓN VISIBLE (" + e.wl + "nm)"; f.vel = 2.0;
+                }
+            }
+            if (e.estado === 'emitiendo_visible' && !f.active) {
+                e.estado = 'cayendo_suelo'; 
+                msg.innerText = "3. Retorno: El electrón vuelve a n=1 liberando el resto de energía";
+            }
+            if (e.estado === 'cayendo_suelo') {
+                if (e.r > niveles[1]) e.r -= 0.9;
+                else {
+                    e.estado = 'emitiendo_uv_final';
+                    f.active = true; f.origenX = e.x; f.x = e.x; f.y = e.y;
+                    f.col = "#ffffff"; f.freq = 1.1; f.txt = "EMISIÓN UV (Lyman)"; f.vel = 2.2;
+                }
+            }
+            if (e.estado === 'emitiendo_uv_final' && !f.active) {
+                e.estado = 'quieto'; msg.innerText = "Ciclo terminado. Átomo estable en n=1.";
+            }
+
+            if (['quieto', 'esperando_uv', 'emitiendo_visible', 'emitiendo_uv_final'].includes(e.estado)) e.ang += 0.012;
+            
+            ctx.fillStyle = "#ffff00"; ctx.shadowBlur = 8; ctx.shadowColor = "yellow";
+            ctx.beginPath(); ctx.arc(e.x, e.y, 5, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0;
+
+            drawDetector(dx, dy, dw, dh);
+            requestAnimationFrame(animar);
+        }
+
+        function drawWave(x, y, col, freq, txt, minX) {
+            ctx.strokeStyle = col; ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let i = 0; i < 70; i++) {
+                let posX = x - i;
+                if (posX >= minX) ctx.lineTo(posX, y + Math.sin((posX) * freq) * 12);
+            }
+            ctx.stroke();
+            ctx.fillStyle = col; ctx.font = "bold 15px sans-serif";
+            ctx.fillText(txt, x - 60, y - 25);
+        }
+
+        function drawDetector(x, y, w, h) {
+            ctx.strokeStyle = "#444"; ctx.strokeRect(x, y, w, h);
+            ctx.fillStyle = "white"; ctx.font = "bold 17px sans-serif";
+            ctx.fillText("DETECTOR VISIBLE", x + 35, y - 20);
+            ctx.fillStyle = "#aaa"; ctx.fillText("Espectro visible (Balmer)", x + 35, y + h + 45);
+            lineasDetectadas.forEach(l => {
+                let xPos = x + w - ((l.wl - 400) / 260 * w);
+                ctx.strokeStyle = l.col; ctx.lineWidth = 6;
+                ctx.beginPath(); ctx.moveTo(xPos, y + 8); ctx.lineTo(xPos, y + h - 8); ctx.stroke();
+                ctx.fillStyle = l.col; ctx.fillText(l.wl + "nm", xPos - 18, y + h + 20);
+            });
+        }
+
+        resetSim();
+        animar();
+    </script>
+</body>
+</html>
