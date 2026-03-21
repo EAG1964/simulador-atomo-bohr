@@ -8,10 +8,10 @@
         body { 
             background: #050505; color: white; font-family: 'Segoe UI', sans-serif; 
             display: flex; flex-direction: column; align-items: center; 
-            margin: 0; padding: 5px; height: 100vh; overflow: hidden; 
+            margin: 0; padding: 5px; min-height: 100vh; overflow-x: hidden; 
         }
         
-        h2 { margin: 5px 0; font-size: 1.2rem; }
+        h2 { margin: 10px 0; font-size: 1.5rem; color: #00fbff; text-shadow: 0 0 10px rgba(0,251,255,0.3); }
 
         .controls { 
             margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; 
@@ -24,26 +24,41 @@
         .n3 { background: #ff4444; } .n4 { background: #00fbff; color: #000; } 
         .n5 { background: #4444ff; } .n6 { background: #a040ff; }
         .reset { background: #444; border: 1px solid #666; }
+        button:hover { transform: scale(1.05); filter: brightness(1.2); }
 
         #msg { margin: 5px; font-size: 15px; color: #ffff00; font-weight: bold; height: 20px; text-align: center; }
 
         .canvas-container {
-            flex-grow: 1; 
             display: flex; align-items: center; justify-content: center;
-            width: 100%; overflow: hidden;
+            width: 100%; margin-bottom: 20px;
         }
 
         canvas { 
             background: #000; border: 1px solid #333; border-radius: 8px; 
-            max-width: 95vw; max-height: 70vh; 
-            height: auto; width: auto;
+            max-width: 95vw; height: auto;
         }
 
-        .licencia-bloque { 
-            margin-top: 5px; color: #666; font-size: 11px; text-align: center; 
-            border-top: 1px solid #222; padding: 5px; width: 100%;
+        /* ESTILOS DE LA GUÍA DIDÁCTICA */
+        .guia-didactica {
+            max-width: 1000px; width: 95%; background: #111; border: 1px solid #333;
+            border-radius: 10px; padding: 20px; margin: 20px 0;
+            border-top: 4px solid #e67e22;
         }
-        .licencia-bloque p { margin: 2px 0; }
+        .guia-header { color: #e67e22; margin-top: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+        
+        .pasos-container {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px;
+        }
+        .paso-card {
+            background: #1a1a1a; padding: 15px; border-radius: 8px; border-left: 4px solid #e67e22;
+        }
+        .paso-card h3 { margin: 0 0 8px 0; font-size: 1rem; color: #ff9f43; }
+        .paso-card p { margin: 0; font-size: 0.85rem; line-height: 1.4; color: #ccc; }
+
+        .licencia-bloque { 
+            margin-top: auto; color: #666; font-size: 11px; text-align: center; 
+            border-top: 1px solid #222; padding: 10px; width: 100%;
+        }
         .licencia-bloque a { color: #00fbff; text-decoration: none; }
     </style>
 </head>
@@ -65,6 +80,24 @@
         <canvas id="cvs" width="1000" height="500"></canvas>
     </div>
 
+    <section class="guia-didactica">
+        <h2 class="guia-header">🚀 Guía Rápida: ¿Qué observar en el Átomo de Bohr?</h2>
+        <div class="pasos-container">
+            <div class="paso-card">
+                <h3>1. Absorción y Excitación</h3>
+                <p>Al pulsar un botón, verás un fotón UV impactar en el electrón. Observa cómo "salta" a una órbita exterior. El electrón solo puede existir en estas órbitas, nunca en el espacio intermedio.</p>
+            </div>
+            <div class="paso-card">
+                <h3>2. Emisión Visible (Serie de Balmer)</h3>
+                <p>El electrón es inestable en niveles altos y cae. Cuando cae al <strong>nivel n=2</strong>, emite energía en forma de luz visible. Cuanto más grande es el salto, más energía tiene el fotón (luz más violeta).</p>
+            </div>
+            <div class="paso-card">
+                <h3>3. El Espectro de Rayas</h3>
+                <p>Fíjate en el detector de la derecha. Cada salto genera una línea exacta. Este código de barras es único para el Hidrógeno y demuestra que la energía en los átomos está <strong>cuantizada</strong>.</p>
+            </div>
+        </div>
+    </section>
+
     <div class="licencia-bloque">
         <p>Autor: <strong>EAG1964</strong> | 2026</p>
         <p>Esta obra está bajo una <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank">Licencia Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional</a></p>
@@ -76,7 +109,6 @@
         const msg = document.getElementById('msg');
 
         const niveles = { 1: 45, 2: 90, 3: 145, 4: 185, 5: 220, 6: 250 };
-        // Espectro ensanchado a 400px para evitar solapamiento de texto
         const dx = 570, dy = 130, dw = 400, dh = 220; 
         
         let e, f, lineasDetectadas;
@@ -94,7 +126,7 @@
             f.active = true; 
             f.x = 0; 
             f.origenX = 0; 
-            f.y = e.y; // Alineación inicial con el electrón
+            f.y = e.y;
             f.col = "#d1d1ff"; f.freq = 0.9; f.txt = "ABSORCIÓN UV (Invisible)"; f.vel = 1.5;
             e.estado = 'esperando_uv';
             msg.innerText = "1. Absorción: El fotón UV sube al electrón hasta n=" + nTarget;
@@ -128,7 +160,7 @@
 
         function animar() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const cx = 270, cy = 250; // Movido un poco a la izquierda para dar sitio al espectro ancho
+            const cx = 270, cy = 250;
 
             ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI * 2); ctx.fill();
 
@@ -148,11 +180,8 @@
 
             if (f.active) {
                 f.x += f.vel;
-                // En absorción, el fotón persigue la Y del electrón para el impacto
                 if (e.estado === 'esperando_uv') f.y = e.y;
-                
                 drawWave(f.x, f.y, f.col, f.freq, f.txt, f.origenX);
-                
                 if (e.estado === 'esperando_uv' && f.x >= e.x) { f.active = false; e.estado = 'subiendo'; }
                 if (e.estado === 'emitiendo_visible' && f.x >= (dx + 10)) {
                     if (!lineasDetectadas.find(l => l.wl === e.wl)) lineasDetectadas.push({ wl: e.wl, col: e.colorVis });
@@ -184,7 +213,6 @@
             if (e.estado === 'emitiendo_uv_final' && !f.active) e.estado = 'quieto';
 
             if (['quieto', 'esperando_uv', 'emitiendo_visible', 'emitiendo_uv_final'].includes(e.estado)) e.ang += 0.012;
-            
             ctx.fillStyle = "#ffff00"; ctx.beginPath(); ctx.arc(e.x, e.y, 5, 0, Math.PI*2); ctx.fill();
 
             drawDetector(dx, dy, dw, dh);
