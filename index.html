@@ -1,238 +1,226 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PhyChem Virtual Lab | EAG1964</title>
-  <style>
-    :root { 
-      --primary: #2c3e50; 
-      --secondary: #3498db; 
-      --accent: #e67e22; 
-      --bg: #f8f9fa; 
-      --physics: #2980b9; 
-      --chemistry: #8e44ad; 
-    }
+    <meta charset="UTF-8">
+    <title>Simulador Bohr: Serie de Balmer</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            background: #050505; color: white; font-family: 'Segoe UI', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; 
+            margin: 0; padding: 5px; min-height: 100vh; overflow-x: hidden; 
+        }
+        
+        h2 { margin: 10px 0; font-size: 1.5rem; color: #00fbff; text-shadow: 0 0 10px rgba(0,251,255,0.3); }
 
-    body { 
-      font-family: 'Segoe UI', system-ui, sans-serif; 
-      max-width: 1000px; 
-      margin: 40px auto; 
-      padding: 20px; 
-      background-color: var(--bg); 
-      color: #333; 
-    }
-    
-    header { 
-      text-align: center; 
-      margin-bottom: 40px; 
-      border-bottom: 4px solid var(--secondary); 
-      padding-bottom: 20px; 
-    }
+        .controls { 
+            margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; 
+        }
 
-    h1 { color: var(--primary); margin: 0; font-size: 2.8rem; }
-    
-    .course-section { 
-      margin-top: 30px; 
-      background: white; 
-      border-radius: 10px; 
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
-      overflow: visible; /* Permitir que el zoom de la imagen sobresalga */
-    }
+        button { 
+            padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; 
+            color: white; font-weight: bold; font-size: 12px; transition: 0.2s; 
+        }
+        .n3 { background: #ff4444; } .n4 { background: #00fbff; color: #000; } 
+        .n5 { background: #4444ff; } .n6 { background: #a040ff; }
+        .reset { background: #444; border: 1px solid #666; }
+        button:hover { transform: scale(1.05); filter: brightness(1.2); }
 
-    .course-header { 
-      background: var(--primary); 
-      color: white; 
-      padding: 12px 20px; 
-      font-weight: bold; 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      border-radius: 10px 10px 0 0;
-    }
+        #msg { margin: 5px; font-size: 15px; color: #ffff00; font-weight: bold; height: 20px; text-align: center; }
 
-    .tag { 
-      font-size: 0.7rem; 
-      background: rgba(255,255,255,0.2); 
-      padding: 2px 8px; 
-      border-radius: 10px; 
-      text-transform: uppercase; 
-    }
-    
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid #eee; vertical-align: middle; }
-    th { background: #f1f2f6; font-size: 0.75rem; color: #7f8c8d; text-transform: uppercase; }
+        .canvas-container {
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; margin-bottom: 20px;
+        }
 
-    /* ESTILO DE PREVISUALIZACIÓN Y ZOOM */
-    .preview-container { position: relative; display: inline-block; margin-top: 10px; }
-    .preview-img { 
-      width: 140px; 
-      height: auto; 
-      border-radius: 6px; 
-      border: 1px solid #ddd; 
-      transition: all 0.3s ease-in-out;
-      cursor: zoom-in;
-      display: block;
-    }
-    .preview-img:hover { 
-      transform: scale(2.5); 
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-      z-index: 999;
-      position: relative;
-    }
-    
-    .btn { 
-      text-decoration: none; 
-      padding: 8px 16px; 
-      border-radius: 5px; 
-      font-size: 0.85rem; 
-      font-weight: bold; 
-      transition: 0.2s; 
-      display: inline-block; 
-      border: 1.5px solid; 
-    }
-    .btn-es { color: #e74c3c; border-color: #e74c3c; }
-    .btn-es:hover { background: #e74c3c; color: white; transform: translateY(-2px); }
-    
-    .visit-counter { 
-      text-align: center; 
-      margin: 50px 0 20px 0; 
-      padding: 20px; 
-      border-top: 1px solid #eee; 
-    }
+        canvas { 
+            background: #000; border: 1px solid #333; border-radius: 8px; 
+            max-width: 95vw; height: auto;
+        }
 
-    footer { 
-      text-align: center; 
-      color: #95a5a6; 
-      font-size: 0.85rem; 
-      padding-bottom: 40px;
-    }
-  </style>
+        /* ESTILOS DE LA GUÍA DIDÁCTICA */
+        .guia-didactica {
+            max-width: 1000px; width: 95%; background: #111; border: 1px solid #333;
+            border-radius: 10px; padding: 20px; margin: 20px 0;
+            border-top: 4px solid #e67e22;
+        }
+        .guia-header { color: #e67e22; margin-top: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+        
+        .pasos-container {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px;
+        }
+        .paso-card {
+            background: #1a1a1a; padding: 15px; border-radius: 8px; border-left: 4px solid #e67e22;
+        }
+        .paso-card h3 { margin: 0 0 8px 0; font-size: 1rem; color: #ff9f43; }
+        .paso-card p { margin: 0; font-size: 0.85rem; line-height: 1.4; color: #ccc; }
+
+        .licencia-bloque { 
+            margin-top: auto; color: #666; font-size: 11px; text-align: center; 
+            border-top: 1px solid #222; padding: 10px; width: 100%;
+        }
+        .licencia-bloque a { color: #00fbff; text-decoration: none; }
+    </style>
 </head>
 <body>
 
-  <header>
-    <h1>PhyChem Virtual Lab</h1>
-    <p>Simulaciones Interactivas de Física y Química | EAG1964</p>
-  </header>
+    <h2>Simulador Atómico: Serie de Balmer</h2>
+    
+    <div class="controls">
+        <button class="n3" onclick="iniciar(3, '#ff0000', 656)">n=3 → n=2 (Rojo)</button>
+        <button class="n4" onclick="iniciar(4, '#00fbff', 486)">n=4 → n=2 (Cian)</button>
+        <button class="n5" onclick="iniciar(5, '#3333ff', 434)">n=5 → n=2 (Azul)</button>
+        <button class="n6" onclick="iniciar(6, '#9d00ff', 410)">n=6 → n=2 (Violeta)</button>
+        <button class="reset" onclick="resetSim()">LIMPIAR ESPECTRO</button>
+    </div>
 
-  <section class="course-section">
-    <div class="course-header">2º ESO <span class="tag">Secundaria</span></div>
-    <table>
-      <thead><tr><th width="65%">Simulación / Simulation</th><th>Acceso</th></tr></thead>
-      <tbody>
-        <tr>
-          <td><strong>Factores de Conversión y Unidades</strong></td>
-          <td><a href="https://EAG1964.github.io/Simulador_Cambio_Unidades_1/" target="_blank" rel="noopener noreferrer" class="btn btn-es">🇪🇸 Abrir</a></td>
-        </tr>
-        <tr>
-          <td>
-            <strong>Iniciación al Átomo (Modelo de Bohr)</strong><br>
-            <div class="preview-container">
-                <img src="preview-bohr.jpeg" class="preview-img" alt="Vista previa Bohr">
+    <div id="msg">Selecciona un salto para excitar el átomo...</div>
+    
+    <div class="canvas-container">
+        <canvas id="cvs" width="1000" height="500"></canvas>
+    </div>
+
+    <section class="guia-didactica">
+        <h2 class="guia-header">🚀 Guía Rápida: ¿Qué observar en el Átomo de Bohr?</h2>
+        <div class="pasos-container">
+            <div class="paso-card">
+                <h3>1. Absorción y Excitación</h3>
+                <p>Al pulsar un botón, verás un fotón UV impactar en el electrón. Observa cómo "salta" a una órbita exterior. El electrón solo puede existir en estas órbitas, nunca en el espacio intermedio.</p>
             </div>
-          </td>
-          <td><a href="https://EAG1964.github.io/simulador-atomo-bohr/" target="_blank" rel="noopener noreferrer" class="btn btn-es">🇪🇸 Abrir</a></td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <section class="course-section">
-    <div class="course-header">3º ESO <span class="tag">Secundaria</span></div>
-    <table>
-      <tbody>
-        <tr>
-          <td width="65%">
-            <strong>Estructura Atómica y Corteza</strong><br>
-            <div class="preview-container">
-                <img src="preview-bohr.jpeg" class="preview-img" alt="Vista previa Bohr">
+            <div class="paso-card">
+                <h3>2. Emisión Visible (Serie de Balmer)</h3>
+                <p>El electrón es inestable en niveles altos y cae. Cuando cae al <strong>nivel n=2</strong>, emite energía en forma de luz visible. Cuanto más grande es el salto, más energía tiene el fotón (luz más violeta).</p>
             </div>
-          </td>
-          <td><a href="https://EAG1964.github.io/simulador-atomo-bohr/" target="_blank" rel="noopener noreferrer" class="btn btn-es">🇪🇸 Abrir</a></td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <section class="course-section">
-    <div class="course-header">4º ESO <span class="tag">Secundaria</span></div>
-    <table>
-      <tbody>
-        <tr>
-          <td width="65%">
-            <strong>Modelos Atómicos: El Salto Cuántico</strong><br>
-            <div class="preview-container">
-                <img src="preview-bohr.jpeg" class="preview-img" alt="Vista previa Bohr">
+            <div class="paso-card">
+                <h3>3. El Espectro de Rayas</h3>
+                <p>Fíjate en el detector de la derecha. Cada salto genera una línea exacta. Este código de barras es único para el Hidrógeno y demuestra que la energía en los átomos está <strong>cuantizada</strong>.</p>
             </div>
-          </td>
-          <td><a href="https://EAG1964.github.io/simulador-atomo-bohr/" target="_blank" rel="noopener noreferrer" class="btn btn-es">🇪🇸 Abrir</a></td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+        </div>
+    </section>
 
-  <section class="course-section">
-    <div class="course-header">1º Bachillerato <span class="tag">Bachillerato</span></div>
-    <table>
-      <tbody>
-        <tr>
-          <td width="65%">
-            <strong>Espectroscopía Atómica de Emisión</strong><br>
-            <div class="preview-container">
-                <img src="preview-bohr.jpeg" class="preview-img" alt="Vista previa Bohr">
-            </div>
-          </td>
-          <td><a href="https://EAG1964.github.io/simulador-atomo-bohr/" target="_blank" rel="noopener noreferrer" class="btn btn-es">🇪🇸 Abrir</a></td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+    <div class="licencia-bloque">
+        <p>Autor: <strong>EAG1964</strong> | 2026</p>
+        <p>Esta obra está bajo una <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank">Licencia Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional</a></p>
+    </div>
 
-  <section class="course-section">
-    <div class="course-header" style="background: var(--physics);">2º Bachillerato - FÍSICA <span class="tag">Bachillerato</span></div>
-    <table>
-      <tbody>
-        <tr>
-          <td width="65%">
-            <strong>Física Cuántica: Series Espectrales del Hidrógeno</strong><br>
-            <div class="preview-container">
-                <img src="preview-bohr.jpeg" class="preview-img" alt="Vista previa Bohr">
-            </div>
-          </td>
-          <td><a href="https://EAG1964.github.io/simulador-atomo-bohr/" target="_blank" rel="noopener noreferrer" class="btn btn-es">🇪🇸 Abrir</a></td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+    <script>
+        const canvas = document.getElementById('cvs');
+        const ctx = canvas.getContext('2d');
+        const msg = document.getElementById('msg');
 
-  <section class="course-section">
-    <div class="course-header" style="background: var(--chemistry);">2º Bachillerato - QUÍMICA <span class="tag">Bachillerato</span></div>
-    <table>
-      <tbody>
-        <tr>
-          <td width="65%">
-            <strong>Estructura de la Materia: El Modelo de Bohr</strong><br>
-            <div class="preview-container">
-                <img src="preview-bohr.jpeg" class="preview-img" alt="Vista previa Bohr">
-            </div>
-          </td>
-          <td><a href="https://EAG1964.github.io/simulador-atomo-bohr/" target="_blank" rel="noopener noreferrer" class="btn btn-es">🇪🇸 Abrir</a></td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+        const niveles = { 1: 45, 2: 90, 3: 145, 4: 185, 5: 220, 6: 250 };
+        const dx = 570, dy = 130, dw = 400, dh = 220; 
+        
+        let e, f, lineasDetectadas;
 
-  <div class="visit-counter">
-    <p style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 10px;">IMPACTO DEL LABORATORIO:</p>
-    <img src="https://profile-counter.glitch.me/EAG1964/count.svg" alt="Visitor Counter">
-    <p style="font-size: 0.7rem; color: #bdc3c7; margin-top: 5px;">visitas totales</p>
-  </div>
+        function resetSim() {
+            e = { r: niveles[1], ang: 0, estado: 'quieto', colorVis: '', wl: '', x: 0, y: 0 };
+            f = { x: -200, y: 0, active: false, col: '', freq: 0.2, txt: '', vel: 1.5, origenX: 0 };
+            lineasDetectadas = [];
+            msg.innerText = "Electrón en estado fundamental (n=1).";
+        }
 
-  <footer>
-    &copy; 2026 <strong>PhyChem Virtual Lab</strong> - EAG1964 <br>
-    Innovación educativa en Física y Química
-  </footer>
+        function iniciar(nTarget, color, wl) {
+            if (e.estado !== 'quieto') return;
+            e.targetN = nTarget; e.colorVis = color; e.wl = wl;
+            f.active = true; 
+            f.x = 0; 
+            f.origenX = 0; 
+            f.y = e.y;
+            f.col = "#d1d1ff"; f.freq = 0.9; f.txt = "ABSORCIÓN UV (Invisible)"; f.vel = 1.5;
+            e.estado = 'esperando_uv';
+            msg.innerText = "1. Absorción: El fotón UV sube al electrón hasta n=" + nTarget;
+        }
 
+        function drawWave(x, y, col, freq, txt, minX) {
+            ctx.strokeStyle = col; ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < 60; i++) {
+                let posX = x - i;
+                if (posX >= minX) ctx.lineTo(posX, y + Math.sin((posX) * freq) * 10);
+            }
+            ctx.stroke();
+            ctx.fillStyle = col; ctx.font = "bold 13px sans-serif";
+            ctx.fillText(txt, x - 50, y - 20);
+        }
+
+        function drawDetector(x, y, w, h) {
+            ctx.strokeStyle = "#444"; ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, w, h);
+            ctx.fillStyle = "white"; ctx.font = "bold 15px sans-serif";
+            ctx.fillText("DETECTOR VISIBLE", x + (w/2) - 70, y - 15);
+            lineasDetectadas.forEach(l => {
+                let xPos = x + w - ((l.wl - 400) / 260 * w);
+                ctx.strokeStyle = l.col; ctx.lineWidth = 5;
+                ctx.beginPath(); ctx.moveTo(xPos, y + 5); ctx.lineTo(xPos, y + h - 5); ctx.stroke();
+                ctx.fillStyle = l.col; ctx.font = "11px sans-serif";
+                ctx.fillText(l.wl + "nm", xPos - 15, y + h + 15);
+            });
+        }
+
+        function animar() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const cx = 270, cy = 250;
+
+            ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI * 2); ctx.fill();
+
+            ctx.lineWidth = 2;
+            for (let n in niveles) {
+                ctx.beginPath(); ctx.arc(cx, cy, niveles[n], 0, Math.PI * 2);
+                ctx.strokeStyle = (n == 1) ? "#444" : (n == 2 ? "#666" : "#333");
+                if (e.estado === 'subiendo' && n == e.targetN) ctx.strokeStyle = "gold";
+                if (e.estado === 'emitiendo_visible' && n == 2) ctx.strokeStyle = e.colorVis;
+                ctx.stroke();
+                ctx.fillStyle = "#777"; ctx.font = "11px sans-serif";
+                ctx.fillText("n=" + n, cx + niveles[n] + 6, cy + 4);
+            }
+
+            e.x = cx + Math.cos(e.ang) * e.r;
+            e.y = cy + Math.sin(e.ang) * e.r;
+
+            if (f.active) {
+                f.x += f.vel;
+                if (e.estado === 'esperando_uv') f.y = e.y;
+                drawWave(f.x, f.y, f.col, f.freq, f.txt, f.origenX);
+                if (e.estado === 'esperando_uv' && f.x >= e.x) { f.active = false; e.estado = 'subiendo'; }
+                if (e.estado === 'emitiendo_visible' && f.x >= (dx + 10)) {
+                    if (!lineasDetectadas.find(l => l.wl === e.wl)) lineasDetectadas.push({ wl: e.wl, col: e.colorVis });
+                }
+                if (f.x > canvas.width) f.active = false;
+            }
+
+            if (e.estado === 'subiendo') {
+                if (e.r < niveles[e.targetN]) e.r += 1.2;
+                else e.estado = 'cayendo_visible';
+            }
+            if (e.estado === 'cayendo_visible') {
+                if (e.r > niveles[2]) e.r -= 0.9;
+                else {
+                    e.estado = 'emitiendo_visible';
+                    f.active = true; f.origenX = e.x; f.x = e.x; f.y = e.y;
+                    f.col = e.colorVis; f.freq = 0.35; f.txt = "FOTÓN " + e.wl + "nm"; f.vel = 1.5;
+                }
+            }
+            if (e.estado === 'emitiendo_visible' && !f.active) e.estado = 'cayendo_suelo';
+            if (e.estado === 'cayendo_suelo') {
+                if (e.r > niveles[1]) e.r -= 0.9;
+                else {
+                    e.estado = 'emitiendo_uv_final';
+                    f.active = true; f.origenX = e.x; f.x = e.x; f.y = e.y;
+                    f.col = "#ffffff"; f.freq = 1.1; f.txt = "EMISIÓN UV (Lyman)"; f.vel = 1.5;
+                }
+            }
+            if (e.estado === 'emitiendo_uv_final' && !f.active) e.estado = 'quieto';
+
+            if (['quieto', 'esperando_uv', 'emitiendo_visible', 'emitiendo_uv_final'].includes(e.estado)) e.ang += 0.012;
+            ctx.fillStyle = "#ffff00"; ctx.beginPath(); ctx.arc(e.x, e.y, 5, 0, Math.PI*2); ctx.fill();
+
+            drawDetector(dx, dy, dw, dh);
+            requestAnimationFrame(animar);
+        }
+
+        resetSim();
+        animar();
+    </script>
 </body>
 </html>
