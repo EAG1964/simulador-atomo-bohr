@@ -2,16 +2,40 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Simulador Bohr: Serie de Balmer</title>
+    <title>Modelo de Bohr: Espectro de H</title>
     <style>
         * { box-sizing: border-box; }
         body { 
             background: #050505; color: white; font-family: 'Segoe UI', sans-serif; 
-            display: flex; flex-direction: column; align-items: center; 
-            margin: 0; padding: 5px; min-height: 100vh; overflow-x: hidden; 
+            margin: 0; padding: 10px; height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column;
         }
         
-        h2 { margin: 10px 0; font-size: 1.5rem; color: #00fbff; text-shadow: 0 0 10px rgba(0,251,255,0.3); }
+        .main-layout {
+            display: flex; flex: 1; gap: 20px; width: 100%; max-width: 1600px;
+            margin: 0 auto; overflow: hidden;
+        }
+
+        /* GUIA ANTIGUA RESTAURADA */
+        .guia-didactica {
+            flex: 0 0 320px; background: #111; border: 1px solid #333;
+            border-radius: 10px; padding: 20px; border-top: 4px solid #e67e22;
+            display: flex; flex-direction: column; overflow-y: auto;
+        }
+        .guia-header { color: #e67e22; margin: 0 0 15px 0; font-size: 1.2rem; text-align: center; }
+        .paso-card {
+            background: #1a1a1a; padding: 15px; border-radius: 8px; 
+            border-left: 4px solid #e67e22; margin-bottom: 15px;
+        }
+        .paso-card h3 { margin: 0 0 8px 0; font-size: 1rem; color: #ff9f43; }
+        .paso-card p { margin: 0; font-size: 0.85rem; line-height: 1.4; color: #ccc; }
+
+        .sim-right-col {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+        }
+
+        h2.sim-title { margin: 0 0 10px 0; font-size: 1.5rem; color: #00fbff; text-align: center; }
 
         .controls { 
             margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; 
@@ -30,77 +54,64 @@
 
         .canvas-container {
             display: flex; align-items: center; justify-content: center;
-            width: 100%; margin-bottom: 20px;
+            width: 100%; flex: 1;
         }
 
         canvas { 
             background: #000; border: 1px solid #333; border-radius: 8px; 
-            max-width: 95vw; height: auto;
+            max-height: 100%; width: auto;
         }
-
-        /* ESTILOS DE LA GUÍA DIDÁCTICA */
-        .guia-didactica {
-            max-width: 1000px; width: 95%; background: #111; border: 1px solid #333;
-            border-radius: 10px; padding: 20px; margin: 20px 0;
-            border-top: 4px solid #e67e22;
-        }
-        .guia-header { color: #e67e22; margin-top: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
-        
-        .pasos-container {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px;
-        }
-        .paso-card {
-            background: #1a1a1a; padding: 15px; border-radius: 8px; border-left: 4px solid #e67e22;
-        }
-        .paso-card h3 { margin: 0 0 8px 0; font-size: 1rem; color: #ff9f43; }
-        .paso-card p { margin: 0; font-size: 0.85rem; line-height: 1.4; color: #ccc; }
 
         .licencia-bloque { 
-            margin-top: auto; color: #666; font-size: 11px; text-align: center; 
-            border-top: 1px solid #222; padding: 10px; width: 100%;
+            margin-top: 10px; color: #666; font-size: 11px; text-align: center; 
+            border-top: 1px solid #222; padding: 8px 0; width: 100%;
         }
         .licencia-bloque a { color: #00fbff; text-decoration: none; }
     </style>
 </head>
 <body>
 
-    <h2>Simulador Atómico: Serie de Balmer</h2>
-    
-    <div class="controls">
-        <button class="n3" onclick="iniciar(3, '#ff0000', 656)">n=3 → n=2 (Rojo)</button>
-        <button class="n4" onclick="iniciar(4, '#00fbff', 486)">n=4 → n=2 (Cian)</button>
-        <button class="n5" onclick="iniciar(5, '#3333ff', 434)">n=5 → n=2 (Azul)</button>
-        <button class="n6" onclick="iniciar(6, '#9d00ff', 410)">n=6 → n=2 (Violeta)</button>
-        <button class="reset" onclick="resetSim()">LIMPIAR ESPECTRO</button>
-    </div>
-
-    <div id="msg">Selecciona un salto para excitar el átomo...</div>
-    
-    <div class="canvas-container">
-        <canvas id="cvs" width="1000" height="500"></canvas>
-    </div>
-
-    <section class="guia-didactica">
-        <h2 class="guia-header">🚀 Guía Rápida: ¿Qué observar en el Átomo de Bohr?</h2>
-        <div class="pasos-container">
+    <div class="main-layout">
+        <aside class="guia-didactica">
+            <h2 class="guia-header">🚀 Guía Rápida: Átomo de Bohr</h2>
+            
             <div class="paso-card">
                 <h3>1. Absorción y Excitación</h3>
-                <p>Al pulsar un botón, verás un fotón UV impactar en el electrón. Observa cómo "salta" a una órbita exterior. El electrón solo puede existir en estas órbitas, nunca en el espacio intermedio.</p>
+                <p>Al pulsar un botón, un fotón UV impacta en el electrón. Observa cómo "salta" a una órbita exterior. El electrón solo puede existir en estas órbitas cuantizadas.</p>
             </div>
+            
             <div class="paso-card">
-                <h3>2. Emisión Visible (Serie de Balmer)</h3>
-                <p>El electrón es inestable en niveles altos y cae. Cuando cae al <strong>nivel n=2</strong>, emite energía en forma de luz visible. Cuanto más grande es el salto, más energía tiene el fotón (luz más violeta).</p>
+                <h3>2. Emisión (Serie de Balmer)</h3>
+                <p>El electrón es inestable en niveles altos. Cuando cae al <strong>nivel n=2</strong>, emite luz visible. Cuanto más grande es el salto, más energía tiene el fotón (luz violeta).</p>
             </div>
+            
             <div class="paso-card">
                 <h3>3. El Espectro de Rayas</h3>
-                <p>Fíjate en el detector de la derecha. Cada salto genera una línea exacta. Este código de barras es único para el Hidrógeno y demuestra que la energía en los átomos está <strong>cuantizada</strong>.</p>
+                <p>Fíjate en el detector. Cada salto genera una línea exacta. Este "código de barras" es único y demuestra que la energía está <strong>cuantizada</strong>.</p>
             </div>
-        </div>
-    </section>
+        </aside>
+
+        <main class="sim-right-col">
+            <h2 class="sim-title">Modelo de Bohr: Espectro Visible del H (serie de Balmer)</h2>
+            
+            <div class="controls">
+                <button class="n3" onclick="iniciar(3, '#ff0000', 656)">n=3 → n=2 (Rojo)</button>
+                <button class="n4" onclick="iniciar(4, '#00fbff', 486)">n=4 → n=2 (Cian)</button>
+                <button class="n5" onclick="iniciar(5, '#3333ff', 434)">n=5 → n=2 (Azul)</button>
+                <button class="n6" onclick="iniciar(6, '#9d00ff', 410)">n=6 → n=2 (Violeta)</button>
+                <button class="reset" onclick="resetSim()">LIMPIAR ESPECTRO</button>
+            </div>
+
+            <div id="msg">Selecciona un salto para excitar el átomo...</div>
+            
+            <div class="canvas-container">
+                <canvas id="cvs" width="1000" height="500"></canvas>
+            </div>
+        </main>
+    </div>
 
     <div class="licencia-bloque">
-        <p>Autor: <strong>EAG1964</strong> | 2026</p>
-        <p>Esta obra está bajo una <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank">Licencia Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional</a></p>
+        <p>Autor: <strong>EAG1964</strong> | 2026 | <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank">Licencia CC BY-NC-SA 4.0</a></p>
     </div>
 
     <script>
@@ -108,7 +119,7 @@
         const ctx = canvas.getContext('2d');
         const msg = document.getElementById('msg');
 
-        const niveles = { 1: 45, 2: 90, 3: 145, 4: 185, 5: 220, 6: 250 };
+        const niveles = { 1: 35, 2: 70, 3: 110, 4: 140, 5: 165, 6: 190 };
         const dx = 570, dy = 130, dw = 400, dh = 220; 
         
         let e, f, lineasDetectadas;
@@ -123,11 +134,8 @@
         function iniciar(nTarget, color, wl) {
             if (e.estado !== 'quieto') return;
             e.targetN = nTarget; e.colorVis = color; e.wl = wl;
-            f.active = true; 
-            f.x = 0; 
-            f.origenX = 0; 
-            f.y = e.y;
-            f.col = "#d1d1ff"; f.freq = 0.9; f.txt = "ABSORCIÓN UV (Invisible)"; f.vel = 1.5;
+            f.active = true; f.x = 0; f.origenX = 0; f.y = e.y;
+            f.col = "#d1d1ff"; f.freq = 0.9; f.txt = "ABSORCIÓN UV"; f.vel = 1.5;
             e.estado = 'esperando_uv';
             msg.innerText = "1. Absorción: El fotón UV sube al electrón hasta n=" + nTarget;
         }
@@ -160,7 +168,7 @@
 
         function animar() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const cx = 270, cy = 250;
+            const cx = 270, cy = 205; 
 
             ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI * 2); ctx.fill();
 
@@ -207,7 +215,7 @@
                 else {
                     e.estado = 'emitiendo_uv_final';
                     f.active = true; f.origenX = e.x; f.x = e.x; f.y = e.y;
-                    f.col = "#ffffff"; f.freq = 1.1; f.txt = "EMISIÓN UV (Lyman)"; f.vel = 1.5;
+                    f.col = "#ffffff"; f.freq = 1.1; f.txt = "EMISIÓN UV"; f.vel = 1.5;
                 }
             }
             if (e.estado === 'emitiendo_uv_final' && !f.active) e.estado = 'quieto';
